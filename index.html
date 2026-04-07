@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>単純CT検査 ビルマ語音声ガイド</title>
+<style>
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Segoe UI",sans-serif;
+background:linear-gradient(180deg,#f7fbff,#eef6ff);color:#0f172a;}
+.header{padding:18px 16px 10px;}
+.frame-title{border:2px solid #38bdf8;padding:14px 16px;border-radius:14px;background:#f8fcff;text-align:center;}
+.frame-title h1{margin:0;font-size:20px;}
+.frame-title p{margin:6px 0 0;font-size:14px;color:#475569;}
+.note{font-size:12px;color:#475569;margin:12px 16px;}
+.main{margin:0 16px 24px;padding:16px;background:#fff;border-radius:18px;box-shadow:0 8px 18px rgba(15,23,42,.08);}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;}
+select{flex:1;max-width:100%;font-size:16px;padding:10px 36px 10px 12px;border-radius:12px;border:1px solid #cbd5f5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+button{font-size:15px;padding:10px 14px;border-radius:12px;border:1px solid #cbd5f5;background:#eff6ff;}
+button:active{transform:scale(.98);}
+.label{margin-top:14px;font-size:13px;color:#475569;}
+.jp{font-size:18px;font-weight:600;margin-top:6px;}
+.en{font-size:16px;margin-top:4px;line-height:1.7;}
+.controls{display:flex;gap:10px;flex-wrap:wrap;margin-top:14px;}
+audio{width:100%;margin-top:10px;}
+.status{margin-top:8px;font-size:13px;color:#475569;}
+.hint{margin-top:10px;font-size:12px;color:#64748b;}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="frame-title">
+    <h1>単純CT検査 ビルマ語音声ガイド</h1>
+    <p>မြန်မာဘာသာ အသံလမ်းညွှန်</p>
+  </div>
+</div>
+
+<p class="note">※ iPhone / iPad / Android で再生できます。最初は「再生」を押してください。</p>
+
+<div class="main">
+  <div class="row">
+    <select id="sel"></select>
+    <button id="prev">← 前</button>
+    <button id="next">次 →</button>
+  </div>
+
+  <div class="label">日本語（内容）</div>
+  <div class="jp" id="jp"></div>
+
+  <div class="label">ビルマ語</div>
+  <div class="en" id="en"></div>
+
+  <div class="controls">
+    <button id="play">▶︎ 再生</button>
+    <button id="pause">⏸ 一時停止</button>
+    <button id="replay">↻ もう一度</button>
+  </div>
+
+  <div class="status" id="status">待機中 / အသင့်ဖြစ်နေပါသည်</div>
+  <audio id="player" controls></audio>
+
+  <div class="hint">
+    再生できない場合：消音モード解除、音量、Bluetooth接続を確認してください。
+  </div>
+</div>
+
+<script>
+const STEPS = [
+ {preview:"すみません、少しよろしいですか？", jp:"すみません、少しよろしいですか？", en:"ခဏလောက် အချိန်ပေးလို့ရမလားခင်ဗျာ/ရှင်။"},
+ {preview:"こちらをご覧ください。これはあな…", jp:"こちらをご覧ください。これはあなたのお名前と生年月日で合っていますか？", en:"ဒီကို ကြည့်ပေးပါ။ ဒီမှာပါတဲ့ အမည်နဲ့ မွေးသက္ကရာဇ်က မှန်ပါသလား။"},
+ {preview:"お名前と生年月日を教えていただけ…", jp:"お名前と生年月日を教えていただけますか？", en:"အမည်နဲ့ မွေးသက္ကရာဇ်ကို ပြောပြပေးလို့ရမလား။"},
+ {preview:"簡単な日本語は理解できますか？", jp:"簡単な日本語は理解できますか？", en:"ရိုးရိုးဂျပန်စကားကို နားလည်နိုင်ပါသလား။"},
+ {preview:"ビルマ語の音声ガイドを使用します…", jp:"（通訳不在時）ビルマ語の音声ガイドで検査を説明します。音声の指示に従ってください。", en:"စကားပြန်မရှိသောအခါ မြန်မာဘာသာ အသံလမ်းညွှန်နဲ့ စစ်ဆေးမှုကို ရှင်းပြပါမယ်။ အသံညွှန်ကြားချက်များကို လိုက်နာပေးပါ။"},
+ {preview:"ビルマ語通訳を呼びますのでお待ち…", jp:"ビルマ語を話せる通訳を呼びますので、しばらくお待ちください。", en:"မြန်မာဘာသာ ပြောနိုင်တဲ့ စကားပြန်ကို ခေါ်ပေးပါမယ်။ ခဏလောက် စောင့်ပေးပါ။"},
+ {preview:"どうぞお入りください。", jp:"どうぞお入りください。", en:"ဝင်လာပါ။"},
+ {preview:"これからCT検査を行います。", jp:"これからCT検査を行います。", en:"အခု CT စစ်ဆေးမှုကို စတင်လုပ်ဆောင်ပါမယ်။"},
+ {preview:"身につけている金属製品を外して…", jp:"身につけている金属製品を外してください。", en:"ခန္ဓာကိုယ်ပေါ်မှာ ဝတ်ထားတဲ့ သတ္တုပစ္စည်းတွေကို ချွတ်ပေးပါ။"},
+ {preview:"ピアスや入れ歯など外してください…", jp:"画像に影響するため、ピアス、ネックレス、ヘアピン、ウィッグ、補聴器、入れ歯など、取り外せるものはすべて外してください。", en:"ပုံရိပ်အပေါ် သက်ရောက်နိုင်တဲ့အတွက် နားကပ်၊ ဆွဲကြိုး၊ ဆံပင်ထိုးကလစ်၊ ဆံပင်တု၊ နားကြားကိရိယာ၊ အံကပ်စတဲ့ ချွတ်လို့ရတဲ့ပစ္စည်းအားလုံးကို ချွတ်ပေးပါ။"},
+ {preview:"（男性）ズボンに金属があり検査に影響…", jp:"（男性）すみません、ズボンに金属があり検査に影響しますので、ベッドに寝た後、膝あたりまでズボンを下げてもらえますか？", en:"တောင်းပန်ပါတယ်။ ဘောင်းဘီမှာ သတ္တုပါရှိလို့ စစ်ဆေးမှုကို ထိခိုက်နိုင်ပါတယ်။ ကုတင်ပေါ် လဲအိပ်ပြီးနောက် ဘောင်းဘီကို ဒူးလောက်အထိ လျှော့ပေးလို့ရမလား။"},
+ {preview:"（女性）ズボンに金属がありますので更衣室へ…", jp:"（女性）すみません、ズボンに金属があり検査に影響しますので、更衣室で検査着に着替えていただけますか？", en:"တောင်းပန်ပါတယ်။ ဘောင်းဘီမှာ သတ္တုပါရှိလို့ စစ်ဆေးမှုကို ထိခိုက်နိုင်ပါတယ်။ အဝတ်လဲခန်းမှာ စစ်ဆေးရေးဝတ်စုံကို လဲပေးလို့ရမလား။"},
+ {preview:"更衣室は17番受付の隣です…", jp:"（着替えが必要な場合）更衣室は17番受付の隣にあります。検査着に着替えて、終わったらここに戻ってきてください。", en:"အဝတ်လဲခန်းက 17 နံပါတ်ကောင်တာ ဘေးမှာရှိပါတယ်။ စစ်ဆေးရေးဝတ်စုံကို လဲပြီးရင် ဒီနေရာကို ပြန်လာပေးပါ။"},
+ {preview:"胸にペースメーカーやICD、CRT…", jp:"（撮影範囲に胸部を含める場合のみ）胸にペースメーカーやICD、CRTなどの心臓の機器はありますか？", en:"ရင်ဘတ်မှာ pacemaker၊ ICD၊ CRT လို နှလုံးဆိုင်ရာ ကိရိယာတွေ ရှိပါသလား။"},
+ {preview:"PM、CRT-Pありの場合：では検…", jp:"（PM、CRT-Pありの場合）では検査後に心臓の機器を確認して、正常に作動しているか確認しますね。", en:"ဒါဆို စစ်ဆေးမှုပြီးတဲ့နောက် နှလုံးကိရိယာက ပုံမှန်အလုပ်လုပ်နေတာလား စစ်ဆေးပါမယ်။"},
+ {preview:"ICD、CRT-Dありの場合：では…", jp:"（ICD、CRT-Dありの場合）では検査の前後に心臓の機器を確認して、正常に作動しているか確認しますね。", en:"ဒါဆို စစ်ဆေးမှုမတိုင်ခင်နဲ့ စစ်ဆေးမှုပြီးပြီးနောက် နှလုံးကိရိယာက ပုံမှန်အလုပ်လုပ်နေတာလား စစ်ဆေးပါမယ်။"},
+ {preview:"ベッドに座って靴を脱いでくださ…", jp:"ベッドに座って靴を脱いでください。", en:"ကုတင်ပေါ်မှာ ထိုင်ပြီး ဖိနပ်ကို ချွတ်ပေးပါ။"},
+ {preview:"ベッドに仰向けで寝てください。", jp:"ベッドに仰向けで寝てください。", en:"ကုတင်ပေါ်မှာ ပက်လက်လှဲပေးပါ။"},
+ {preview:"頭がここで足先がここです。", jp:"頭がここで足先がここです。", en:"ခေါင်းကို ဒီဘက်မှာထားပြီး ခြေထောက်ကို ဟိုဘက်မှာထားပါ။"},
+ {preview:"少し上に動いてください…", jp:"少し上の方に動いてください。", en:"အပေါ်ဘက်ကို နည်းနည်းရွှေ့ပေးပါ။"},
+ {preview:"少し下に動いてください…", jp:"少し下の方に動いてください。", en:"အောက်ဘက်ကို နည်းနည်းရွှေ့ပေးပါ။"},
+ {preview:"両手を頭の上に上げてください。", jp:"両手を頭の上に上げてください。", en:"လက်နှစ်ဖက်ကို ခေါင်းအပေါ်ဘက် မြှောက်ပေးပါ။"},
+ {preview:"頭を動かさないでください…", jp:"（頭部CTのみ）頭を動かさないでください。そのままじっとしてください。", en:"ခေါင်းကို မလှုပ်ပါနဲ့။ အဲဒီအတိုင်း ငြိမ်ငြိမ်နေပါ။"},
+ {preview:"検査中にビルマ語で息止めの指示を…", jp:"検査中にビルマ語で息止めの指示を出しますので、その指示に従ってください。", en:"စစ်ဆေးနေစဉ်အတွင်း မြန်မာဘာသာနဲ့ အသက်ရှုရပ်ရန် ညွှန်ကြားချက်ပေးပါမယ်။ အဲဒီညွှန်ကြားချက်ကို လိုက်နာပေးပါ။"},
+ {preview:"ベッドが動きます。", jp:"ベッドが動きます。", en:"ကုတင်ရွှေ့ပါမယ်။"},
+ {preview:"検査が終わりました。", jp:"検査が終わりました。", en:"စစ်ဆေးမှု ပြီးပါပြီ။"},
+ {preview:"検査ご協力ありがとうございました…", jp:"検査ご協力ありがとうございました。", en:"စစ်ဆေးမှုအတွက် ပူးပေါင်းဆောင်ရွက်ပေးတာ ကျေးဇူးတင်ပါတယ်။"},
+ {preview:"ベッドが停止するまでは寝たまま…", jp:"ベッドが停止するまでは寝たままでお願いします。", en:"ကုတင် လုံးဝ ရပ်သွားတဲ့အထိ လဲအိပ်နေပါ။"},
+ {preview:"今から心臓の機械を確認します…", jp:"今から、心臓の機械が正常に作動しているか確認しますね。", en:"အခု နှလုံးကိရိယာက ပုံမှန်အလုပ်လုပ်နေတာလား စစ်ဆေးပါမယ်။"},
+ {preview:"ゆっくり体を起こしてください。", jp:"ゆっくり体を起こしてください。", en:"ခန္ဓာကိုယ်ကို ဖြည်းဖြည်းချင်း ထူပေးပါ။"},
+ {preview:"次は診察がありますので、10番へ…", jp:"次は診察がありますので、10番へ行ってこのファイルを提出してください。", en:"နောက်တစ်ဆင့်မှာ ဆရာဝန်နဲ့ တွေ့ရပါမယ်။ 10 နံပါတ်ကို သွားပြီး ဒီဖိုင်ကို ဝန်ထမ်းထံ အပ်ပေးပါ။"},
+ {preview:"19番または20番の前でお待ちくだ…", jp:"19番または20番の検査室の前でお待ちください。", en:"19 သို့မဟုတ် 20 နံပါတ် စစ်ဆေးခန်းရှေ့မှာ စောင့်ပေးပါ။"},
+ {preview:"23番の前でお待ちください。", jp:"23番の検査室の前でお待ちください。", en:"23 နံပါတ် စစ်ဆေးခန်းရှေ့မှာ စောင့်ပေးပါ။"},
+ {preview:"15番の前でお待ちください。", jp:"15番の検査室の前でお待ちください。", en:"15 နံပါတ် စစ်ဆေးခန်းရှေ့မှာ စောင့်ပေးပါ။"},
+ {preview:"もう着替えてもいいですよ。", jp:"（着替えていい場合）もう着替えてもいいですよ。", en:"အခု အဝတ်ပြန်လဲလို့ ရပါပြီ။"},
+ {preview:"まだ他の検査が残っています。", jp:"（他検査がある場合）まだ他の検査が残っています。", en:"အခြား စစ်ဆေးမှုတွေ ကျန်နေသေးပါတယ်။"},
+ {preview:"まだ着替えないでください。", jp:"（他検査がある場合）まだ着替えないでください。", en:"အခုတော့ အဝတ်မလဲသေးပါနဲ့။"},
+ {preview:"お大事になさってください。", jp:"お大事になさってください。", en:"ကျန်းမာရေးဂရုစိုက်ပါ။"},
+];
+
+const sel=document.getElementById('sel'),
+jp=document.getElementById('jp'),
+en=document.getElementById('en'),
+player=document.getElementById('player'),
+status=document.getElementById('status');
+
+STEPS.forEach((s,i)=>{
+ const o=document.createElement('option');
+ o.value=i;
+ o.textContent=`${String(i+1).padStart(2,'0')}｜${s.jp}`;
+ sel.appendChild(o);
+});
+
+let idx=0;
+function load(i){
+ idx=Math.max(0,Math.min(STEPS.length-1,i));
+ sel.value=idx;
+ jp.textContent=STEPS[idx].jp;
+ en.textContent=STEPS[idx].en;
+ player.src=`audio/step_${String(idx+1).padStart(2,'0')}.m4a`;
+ status.textContent="待機中 / အသင့်ဖြစ်နေပါသည်";
+}
+sel.onchange=()=>load(parseInt(sel.value));
+document.getElementById('prev').onclick=()=>load(idx-1);
+document.getElementById('next').onclick=()=>load(idx+1);
+document.getElementById('play').onclick=()=>player.play();
+document.getElementById('pause').onclick=()=>player.pause();
+document.getElementById('replay').onclick=()=>{player.currentTime=0;player.play();}
+player.onplay=()=>status.textContent="再生中 / ဖွင့်နေပါသည်";
+player.onpause=()=>status.textContent="一時停止 / ခေတ္တရပ်ထားသည်";
+player.onended=()=>status.textContent="待機中 / အသင့်ဖြစ်နေပါသည်";
+load(0);
+</script>
+</body>
+</html>
